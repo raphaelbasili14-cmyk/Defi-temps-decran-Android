@@ -44,6 +44,11 @@ export default function HomeScreen() {
     router.push('/challenge');
   };
 
+  const openQuiz = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/quiz');
+  };
+
   const openSettings = () => {
     void Haptics.selectionAsync();
     router.push('/settings');
@@ -185,10 +190,7 @@ export default function HomeScreen() {
 
         <View style={styles.challengeHeading}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Une pause active
-          </Text>
-          <Text style={[styles.challengeCount, { color: colors.mutedForeground }]}>
-            DÉFI DU JOUR
+            Choisis ton défi
           </Text>
         </View>
 
@@ -203,13 +205,8 @@ export default function HomeScreen() {
               <Feather name="activity" size={22} color={colors.primaryForeground} />
             </View>
             <View style={styles.bonusPill}>
-              <Text
-                style={[
-                  styles.bonusPillText,
-                  { color: colors.primaryForeground },
-                ]}
-              >
-                +{data.bonusMinutes} min
+              <Text style={[styles.bonusPillText, { color: colors.primaryForeground }]}>
+                PHYSIQUE
               </Text>
             </View>
           </View>
@@ -222,7 +219,7 @@ export default function HomeScreen() {
               { color: colors.primaryForeground },
             ]}
           >
-            Filme ton effort, puis vérifie la vidéo avant de confirmer.
+            Filme-toi avec la caméra avant. Le comptage fiable est en préparation.
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -237,7 +234,7 @@ export default function HomeScreen() {
             ]}
           >
             <Text style={[styles.challengeButtonText, { color: colors.primary }]}>
-              Commencer le défi
+              Voir le défi physique
             </Text>
             <Feather
               name="arrow-right"
@@ -246,6 +243,41 @@ export default function HomeScreen() {
             />
           </Pressable>
         </View>
+
+        <View
+          style={[
+            styles.schoolCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View style={[styles.schoolIcon, { backgroundColor: colors.secondary }]}>
+            <Feather name="book-open" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.schoolCopy}>
+            <Text style={[styles.schoolTitle, { color: colors.foreground }]}>
+              Défi scolaire
+            </Text>
+            <Text style={[styles.schoolDescription, { color: colors.mutedForeground }]}>
+              Maths, français ou anglais
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Choisir une matière"
+            testID="start-school-quiz"
+            onPress={openQuiz}
+            style={({ pressed }) => [
+              styles.schoolButton,
+              { backgroundColor: colors.primary, opacity: pressed ? 0.84 : 1 },
+            ]}
+          >
+            <Feather name="arrow-right" size={17} color={colors.primaryForeground} />
+          </Pressable>
+        </View>
+
+        <Text style={[styles.challengeFootnote, { color: colors.mutedForeground }]}>
+          Le quiz scolaire fonctionne hors connexion. Le bonus physique attendra le comptage automatique.
+        </Text>
 
         {storageError ? (
           <Text style={[styles.errorText, { color: colors.destructive }]}>
@@ -434,6 +466,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   challengeButtonText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  schoolCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    minHeight: 78,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    marginTop: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  schoolIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  schoolCopy: { flex: 1, gap: 4 },
+  schoolTitle: { fontFamily: 'Inter_700Bold', fontSize: 13 },
+  schoolDescription: { fontFamily: 'Inter_400Regular', fontSize: 10 },
+  schoolButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  challengeFootnote: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 10,
+  },
   errorText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,

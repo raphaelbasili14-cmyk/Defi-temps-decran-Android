@@ -5,7 +5,6 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Linking,
   Platform,
   Pressable,
@@ -48,8 +47,7 @@ export default function ChallengeScreen() {
   const [clipUri, setClipUri] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
-  const { data, addChallengeBonus } = useAppData();
+  const { data } = useAppData();
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -82,34 +80,6 @@ export default function ChallengeScreen() {
 
   const stopRecording = () => {
     cameraRef.current?.stopRecording();
-  };
-
-  const confirmChallenge = () => {
-    Alert.alert(
-      'Confirmer le défi',
-      `As-tu réalisé les 8 pompes et vérifié la vidéo ? Le bonus de ${data.bonusMinutes} minutes sera ajouté à ton compteur.`,
-      [
-        { text: 'Pas encore', style: 'cancel' },
-        {
-          text: 'Oui, confirmer',
-          onPress: () => {
-            setIsSaving(true);
-            void addChallengeBonus()
-              .then(() => {
-                void Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Success,
-                );
-                Alert.alert(
-                  'Bien joué !',
-                  `${data.bonusMinutes} minutes ont été ajoutées à tes bonus du jour.`,
-                  [{ text: 'Continuer', onPress: () => router.replace('/') }],
-                );
-              })
-              .finally(() => setIsSaving(false));
-          },
-        },
-      ],
-    );
   };
 
   const openSettings = async () => {
@@ -148,13 +118,13 @@ export default function ChallengeScreen() {
 
         <View style={styles.heading}>
           <Text style={[styles.eyebrow, { color: colors.primary }]}>
-            8 POMPES · +{data.bonusMinutes} MIN
+            DÉFI PHYSIQUE · 8 POMPES
           </Text>
           <Text style={[styles.title, { color: colors.foreground }]}>
             À toi de jouer.
           </Text>
           <Text style={[styles.instructions, { color: colors.mutedForeground }]}>
-            Pose ton téléphone de côté, en plan large. Filme tes pompes, puis regarde la vidéo avant de confirmer.
+            Pose ton téléphone face à toi, en plan large. Garde tout ton corps visible pendant les 8 pompes.
           </Text>
         </View>
 
@@ -168,7 +138,7 @@ export default function ChallengeScreen() {
             <CameraView
               ref={cameraRef}
               style={styles.camera}
-              facing="back"
+              facing="front"
               mode="video"
               mute
               onMountError={(event) => setCameraError(event.message)}
@@ -179,7 +149,7 @@ export default function ChallengeScreen() {
             <View style={styles.permissionPanel}>
               <Feather name="camera" size={26} color={colors.primary} />
               <Text style={[styles.permissionTitle, { color: colors.foreground }]}>
-                La caméra est disponible sur Android
+                La caméra avant est disponible sur Android
               </Text>
               <Text style={[styles.permissionText, { color: colors.mutedForeground }]}>
                 Ouvre l’aperçu sur un téléphone pour filmer ton défi.
@@ -251,9 +221,9 @@ export default function ChallengeScreen() {
           {clipUri ? (
             <>
               <View style={[styles.disclosure, { backgroundColor: colors.secondary }]}>
-                <Feather name="eye" size={15} color={colors.primary} />
+                <Feather name="alert-circle" size={15} color={colors.primary} />
                 <Text style={[styles.disclosureText, { color: colors.mutedForeground }]}>
-                  La vidéo est une preuve à vérifier par toi. Aucun comptage automatique n’est effectué.
+                  La vidéo est enregistrée, mais aucun comptage automatique fiable n’est encore disponible. Aucun bonus physique ne sera accordé sur une simple confirmation manuelle.
                 </Text>
               </View>
               <View style={styles.actionRow}>
@@ -272,26 +242,25 @@ export default function ChallengeScreen() {
                 >
                   <Feather name="rotate-ccw" size={16} color={colors.foreground} />
                   <Text style={[styles.secondaryButtonText, { color: colors.foreground }]}>
-                    Refaire
+                    Refilmer
                   </Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  testID="confirm-challenge"
-                  disabled={isSaving}
-                  onPress={confirmChallenge}
+                  testID="choose-school-challenge"
+                  onPress={() => router.push('/quiz')}
                   style={({ pressed }) => [
                     styles.primaryButton,
                     {
                       backgroundColor: colors.primary,
-                      opacity: isSaving ? 0.5 : pressed ? 0.85 : 1,
+                      opacity: pressed ? 0.85 : 1,
                     },
                   ]}
                 >
                   <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
-                    J’ai fait mes 8 pompes
+                    Choisir un quiz
                   </Text>
-                  <Feather name="check" size={17} color={colors.primaryForeground} />
+                  <Feather name="arrow-right" size={17} color={colors.primaryForeground} />
                 </Pressable>
               </View>
             </>

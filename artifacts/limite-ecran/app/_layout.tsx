@@ -24,6 +24,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="settings" options={{ presentation: 'card' }} />
       <Stack.Screen name="challenge" options={{ presentation: 'card' }} />
+      <Stack.Screen name="quiz" options={{ presentation: 'card' }} />
     </Stack>
   );
 }
