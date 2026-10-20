@@ -1,1 +1,1 @@
-- [Android screen-time limits](android-screen-time-limitations.md) — keep OS-level tracking, enforcement, and exercise validation claims explicit until native Android support is implemented.
+- [Android screen-time limits](android-screen-time-limitations.md) — UsageStats is APK-only; phone blocking and automatic push-up validation remain unimplemented.

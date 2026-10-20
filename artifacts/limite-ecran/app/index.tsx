@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppData } from '@/context/AppDataContext';
 import { useColors } from '@/hooks/useColors';
+import { useUsageStats } from '@/hooks/useUsageStats';
 
 const formatLimit = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
@@ -21,6 +22,14 @@ const formatLimit = (minutes: number) => {
   if (hours === 0) return `${remaining} min`;
   if (remaining === 0) return `${hours} h`;
   return `${hours} h ${String(remaining).padStart(2, '0')}`;
+};
+
+const formatDuration = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} h`;
+  return `${hours} h ${String(minutes).padStart(2, '0')}`;
 };
 
 const formatDate = () =>
@@ -36,8 +45,35 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { data, isReady, storageError } = useAppData();
+  const usage = useUsageStats();
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const allowedSeconds =
+    (data.dailyLimitMinutes + data.extraMinutesToday) * 60;
+  const usageProgress =
+    usage.todaySeconds === null || allowedSeconds === 0
+      ? 0
+      : Math.min(100, (usage.todaySeconds / allowedSeconds) * 100);
+
+  const usageTitle =
+    usage.status === 'ready'
+      ? 'Temps d’écran aujourd’hui'
+      : usage.status === 'permission-required'
+        ? 'Autorisation Android requise'
+        : usage.status === 'unsupported'
+          ? 'APK Android autonome requis'
+          : usage.status === 'error'
+            ? 'Lecture du suivi impossible'
+            : 'Vérification du suivi Android…';
+
+  const usageDescription =
+    usage.status === 'ready' && usage.todaySeconds !== null
+      ? `${formatDuration(usage.todaySeconds)} utilisés · limite avec bonus ${formatDuration(allowedSeconds)}`
+      : usage.status === 'permission-required'
+        ? 'Active « Accès aux données d’utilisation » pour lire le temps réel du téléphone.'
+        : usage.status === 'unsupported'
+          ? 'Expo Go ne peut pas identifier Pause Active comme une application installée.'
+          : usage.error ?? 'Lecture locale des statistiques Android.';
 
   const openChallenge = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -127,7 +163,7 @@ export default function HomeScreen() {
             <View style={[styles.statusDot, { backgroundColor: colors.accent }]} />
             <View style={styles.trackingCopy}>
               <Text style={[styles.trackingTitle, { color: colors.foreground }]}>
-                Suivi Android à connecter
+                {usageTitle}
               </Text>
               <Text
                 style={[
@@ -135,10 +171,28 @@ export default function HomeScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                Le temps d’écran du téléphone n’est pas encore accessible dans cet aperçu.
+                {usageDescription}
               </Text>
             </View>
           </View>
+          {usage.status === 'ready' ? (
+            <View
+              style={[
+                styles.progressTrack,
+                { backgroundColor: colors.secondary },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: colors.primary,
+                    width: `${usageProgress}%`,
+                  },
+                ]}
+              />
+            </View>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             testID="open-tracking-settings"
@@ -149,7 +203,9 @@ export default function HomeScreen() {
             ]}
           >
             <Text style={[styles.textActionLabel, { color: colors.primary }]}>
-              Comprendre le suivi
+              {usage.status === 'permission-required'
+                ? 'Configurer le suivi'
+                : 'Gérer le suivi'}
             </Text>
             <Feather name="arrow-up-right" size={15} color={colors.primary} />
           </Pressable>
@@ -372,6 +428,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
+  progressTrack: {
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginTop: 11,
+  },
+  progressFill: { height: 5, borderRadius: 3 },
   textAction: {
     flexDirection: 'row',
     alignItems: 'center',

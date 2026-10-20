@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React from 'react';
 import {
+  ActivityIndicator,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppData } from '@/context/AppDataContext';
 import { useColors } from '@/hooks/useColors';
+import { useUsageStats } from '@/hooks/useUsageStats';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 const formatLimit = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
@@ -99,6 +102,8 @@ export default function SettingsScreen() {
     adjustBonusMinutes,
     storageError,
   } = useAppData();
+  const usage = useUsageStats();
+  const [usageActionError, setUsageActionError] = React.useState<string | null>(null);
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -106,6 +111,41 @@ export default function SettingsScreen() {
     void Haptics.selectionAsync();
     void action();
   };
+
+  const requestUsageAccess = async () => {
+    if (Platform.OS !== 'android') return;
+    setUsageActionError(null);
+    try {
+      await IntentLauncher.startActivityAsync(
+        IntentLauncher.ActivityAction.USAGE_ACCESS_SETTINGS,
+      );
+      await usage.refresh();
+    } catch {
+      setUsageActionError(
+        'Impossible d’ouvrir ce réglage. Ouvre manuellement les paramètres d’accès spécial Android.',
+      );
+    }
+  };
+
+  const usageAccessTitle =
+    usage.status === 'ready'
+      ? 'Accès aux données d’utilisation activé'
+      : usage.status === 'permission-required'
+        ? 'Accès aux données d’utilisation à autoriser'
+        : usage.status === 'unsupported'
+          ? 'Installation Android autonome nécessaire'
+          : usage.status === 'error'
+            ? 'Statistiques indisponibles'
+            : 'Vérification de l’autorisation…';
+
+  const usageAccessDescription =
+    usage.status === 'ready' && usage.todaySeconds !== null
+      ? `Suivi actif sur cet appareil · ${Math.floor(usage.todaySeconds / 60)} min aujourd’hui`
+      : usage.status === 'permission-required'
+        ? 'Dans les réglages Android, autorise Pause Active à accéder aux données d’utilisation, puis reviens ici.'
+        : usage.status === 'unsupported'
+          ? 'L’aperçu Expo Go n’a pas son propre profil d’application. Installe un APK Pause Active pour accorder cette autorisation.'
+          : usage.error ?? 'Les statistiques sont lues localement sur le téléphone.';
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -188,16 +228,61 @@ export default function SettingsScreen() {
             À propos du suivi Android
           </Text>
           <Text style={[styles.infoBody, { color: colors.mutedForeground }]}>
-            Cette version enregistre tes réglages et tes défis, mais ne lit pas encore le temps d’écran du téléphone. Android demande une autorisation « Accès aux données d’utilisation » et une intégration native dédiée.
+            Android identifie l’application sous le nom de paquet ci-dessous. Après installation de l’APK, tu pourras activer l’autorisation spéciale « Accès aux données d’utilisation ». Les statistiques seront lues sur l’appareil et ne seront pas envoyées.
           </Text>
           <View style={[styles.stepsBox, { backgroundColor: colors.card }]}>
             <Text style={[styles.stepsTitle, { color: colors.foreground }]}>
-              Où trouver cette autorisation
+              Identité Android
             </Text>
             <Text style={[styles.stepsText, { color: colors.mutedForeground }]}>
-              Réglages du téléphone → Applications → Accès spécial → Accès aux données d’utilisation. Elle ne peut pas être activée depuis l’aperçu.
+              com.pauseactive.mobile
             </Text>
           </View>
+          <View
+            style={[
+              styles.usageStatus,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            {usage.status === 'checking' ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Feather
+                name={usage.status === 'ready' ? 'check-circle' : 'info'}
+                size={17}
+                color={usage.status === 'ready' ? colors.primary : colors.accent}
+              />
+            )}
+            <View style={styles.usageStatusCopy}>
+              <Text style={[styles.usageStatusTitle, { color: colors.foreground }]}>
+                {usageAccessTitle}
+              </Text>
+              <Text style={[styles.usageStatusBody, { color: colors.mutedForeground }]}>
+                {usageAccessDescription}
+              </Text>
+            </View>
+          </View>
+          {usage.status === 'permission-required' && Platform.OS === 'android' ? (
+            <Pressable
+              accessibilityRole="button"
+              testID="grant-usage-access"
+              onPress={() => void requestUsageAccess()}
+              style={({ pressed }) => [
+                styles.permissionButton,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Text style={[styles.permissionButtonText, { color: colors.primaryForeground }]}>
+                Ouvrir les réglages Android
+              </Text>
+              <Feather name="arrow-up-right" size={15} color={colors.primaryForeground} />
+            </Pressable>
+          ) : null}
+          {usageActionError ? (
+            <Text style={[styles.errorText, { color: colors.destructive }]}>
+              {usageActionError}
+            </Text>
+          ) : null}
         </View>
 
         <View
@@ -302,6 +387,28 @@ const styles = StyleSheet.create({
   stepsBox: { borderRadius: 15, padding: 13, marginTop: 14 },
   stepsTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 11, marginBottom: 5 },
   stepsText: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 16 },
+  usageStatus: {
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 12,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 9,
+  },
+  usageStatusCopy: { flex: 1, gap: 4 },
+  usageStatusTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+  usageStatusBody: { fontFamily: 'Inter_400Regular', fontSize: 10, lineHeight: 15 },
+  permissionButton: {
+    minHeight: 43,
+    borderRadius: 13,
+    paddingHorizontal: 13,
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  permissionButtonText: { fontFamily: 'Inter_700Bold', fontSize: 11 },
   privacyCard: {
     borderWidth: 1,
     borderRadius: 18,

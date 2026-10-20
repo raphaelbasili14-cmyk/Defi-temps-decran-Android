@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "expo-camera": "~57.0.6",
+    "expo-intent-launcher": "~57.0.1",
     "expo-video": "~57.0.5"
   }
 }
