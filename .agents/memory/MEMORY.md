@@ -1,0 +1,1 @@
+- [Android screen-time limits](android-screen-time-limitations.md) — keep OS-level tracking, enforcement, and exercise validation claims explicit until native Android support is implemented.

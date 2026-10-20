@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Pause Active"
+description = "Une application Android qui aide à mieux gérer le temps d’écran quotidien : l’utilisateur fixe une limite, puis peut gagner quelques minutes supplémentaires en réalisant un défi physique vérifié par caméra."
+version = "1.0.0"
+id = "artifacts/limite-ecran"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 24566
+
+[services.development]
+run = "pnpm --filter @workspace/limite-ecran run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/limite-ecran", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/limite-ecran", "run", "serve" ]
+
+[services.env]
+PORT = "24566"
+BASE_PATH = "/"

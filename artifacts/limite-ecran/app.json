@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Pause Active",
+    "slug": "limite-ecran",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "limite-ecran",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#101E19",
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Pause Active utilise la caméra pour filmer ton défi sportif.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-video"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
